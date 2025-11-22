@@ -1,5 +1,5 @@
 {
-  "name": "chatgpt-clone",
+  "name": "openmind",
   "version": "1.0.0",
   "description": "A ChatGPT clone built with React",
   "main": "index.js",
@@ -7,7 +7,7 @@
     "start": "webpack serve --mode development --open",
     "build": "webpack --mode production"
   },
-  "keywords": ["react", "chatgpt", "clone"],
+  "keywords": ["react", "openmind", "clone"],
   "author": "",
   "license": "MIT",
   "dependencies": {

@@ -3,19 +3,32 @@ import Sidebar from './components/Sidebar';
 import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
 import ApiKeyModal from './components/ApiKeyModal';
+import MoodTracker from './components/MoodTracker';
+import WellnessDashboard from './components/WellnessDashboard';
+import JournalEntry from './components/JournalEntry';
+import CrisisAlert from './components/CrisisAlert';
+import BreathingExercise from './components/BreathingExercise';
 
 function App() {
   const [chats, setChats] = useState([
     {
       id: 1,
-      title: 'New Chat',
-      messages: []
+      title: 'New Conversation',
+      messages: [],
+      mood: null,
+      timestamp: new Date().toISOString()
     }
   ]);
   const [currentChatId, setCurrentChatId] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
   const [showApiModal, setShowApiModal] = useState(!localStorage.getItem('gemini_api_key'));
+  const [currentView, setCurrentView] = useState('chat'); // 'chat', 'dashboard', 'journal', 'breathing'
+  const [showMoodTracker, setShowMoodTracker] = useState(false);
+  const [showCrisisAlert, setShowCrisisAlert] = useState(false);
+  const [crisisMessage, setCrisisMessage] = useState('');
+  const [moodHistory, setMoodHistory] = useState(JSON.parse(localStorage.getItem('mood_history') || '[]'));
+  const [journalEntries, setJournalEntries] = useState(JSON.parse(localStorage.getItem('journal_entries') || '[]'));
   const messagesEndRef = useRef(null);
 
   const currentChat = chats.find(chat => chat.id === currentChatId);
@@ -36,6 +49,20 @@ function App() {
       return;
     }
 
+    // Crisis keyword detection
+    const crisisKeywords = [
+      'suicide', 'kill myself', 'end my life', 'want to die', 'self harm',
+      'hurt myself', 'no reason to live', 'better off dead', 'suicidal'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    const hasCrisisKeyword = crisisKeywords.some(keyword => lowerMessage.includes(keyword));
+    
+    if (hasCrisisKeyword) {
+      setCrisisMessage(message);
+      setShowCrisisAlert(true);
+    }
+
     const userMessage = {
       id: Date.now(),
       role: 'user',
@@ -50,7 +77,7 @@ function App() {
           ? { 
               ...chat, 
               messages: [...chat.messages, userMessage],
-              title: chat.messages.length === 0 ? message.slice(0, 30) + (message.length > 30 ? '...' : '') : chat.title
+              title: chat.messages.length === 0 ? message.slice(0, 40) + (message.length > 40 ? '...' : '') : chat.title
             }
           : chat
       )
@@ -96,7 +123,27 @@ function App() {
       console.log('Sending request to Gemini API...');
       console.log('Conversation history:', conversationHistory);
 
-      // Call Gemini API
+      // Mental health-focused system instruction
+      const systemInstruction = `You are OpenMind, a compassionate mental health companion AI. Your role is to:
+
+1. **Listen with empathy**: Validate emotions without judgment
+2. **Provide support**: Offer evidence-based coping strategies from CBT, DBT, and mindfulness
+3. **Encourage professional help**: Suggest therapy when needed, but never diagnose
+4. **Be available 24/7**: Respond warmly at any time
+5. **Respect privacy**: Never share or remember personal information beyond this conversation
+6. **Use gentle language**: Be warm, non-clinical, and conversational
+7. **Ask reflective questions**: Help users explore their feelings
+8. **Normalize struggles**: Remind them mental health challenges are common
+
+**Important boundaries:**
+- Never diagnose mental health conditions
+- Always recommend professional help for serious issues
+- If someone mentions self-harm or suicide, express concern and provide crisis resources
+- Don't give medical advice about medications
+
+**Your tone:** Warm, supportive, patient, and genuinely caring - like a trusted friend who truly listens.`;
+
+      // Call Gemini API with mental health context
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
@@ -105,7 +152,16 @@ function App() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            contents: conversationHistory
+            contents: conversationHistory,
+            systemInstruction: {
+              parts: [{ text: systemInstruction }]
+            },
+            generationConfig: {
+              temperature: 0.8,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+            }
           }),
         }
       );
@@ -186,15 +242,19 @@ function App() {
   const handleNewChat = () => {
     const newChat = {
       id: Date.now(),
-      title: 'New Chat',
-      messages: []
+      title: 'New Conversation',
+      messages: [],
+      mood: null,
+      timestamp: new Date().toISOString()
     };
     setChats([...chats, newChat]);
     setCurrentChatId(newChat.id);
+    setCurrentView('chat');
   };
 
   const handleSelectChat = (chatId) => {
     setCurrentChatId(chatId);
+    setCurrentView('chat');
   };
 
   const handleDeleteChat = (chatId) => {
@@ -212,6 +272,39 @@ function App() {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const handleMoodSelect = (mood) => {
+    const moodEntry = {
+      mood,
+      timestamp: new Date().toISOString(),
+      chatId: currentChatId
+    };
+    
+    const newMoodHistory = [...moodHistory, moodEntry];
+    setMoodHistory(newMoodHistory);
+    localStorage.setItem('mood_history', JSON.stringify(newMoodHistory));
+    
+    setChats(prevChats =>
+      prevChats.map(chat =>
+        chat.id === currentChatId ? { ...chat, mood } : chat
+      )
+    );
+    
+    setShowMoodTracker(false);
+  };
+
+  const handleJournalSave = (entry) => {
+    const journalEntry = {
+      id: Date.now(),
+      content: entry,
+      timestamp: new Date().toISOString(),
+      mood: chats.find(c => c.id === currentChatId)?.mood
+    };
+    
+    const newEntries = [...journalEntries, journalEntry];
+    setJournalEntries(newEntries);
+    localStorage.setItem('journal_entries', JSON.stringify(newEntries));
+  };
+
   return (
     <div className="app">
       {showApiModal && (
@@ -219,6 +312,20 @@ function App() {
           onSave={handleSaveApiKey} 
           onClose={() => setShowApiModal(false)}
           currentKey={apiKey}
+        />
+      )}
+
+      {showMoodTracker && (
+        <MoodTracker
+          onSelectMood={handleMoodSelect}
+          onClose={() => setShowMoodTracker(false)}
+        />
+      )}
+
+      {showCrisisAlert && (
+        <CrisisAlert
+          message={crisisMessage}
+          onClose={() => setShowCrisisAlert(false)}
         />
       )}
       
@@ -231,6 +338,8 @@ function App() {
         isOpen={sidebarOpen}
         onToggle={toggleSidebar}
         onOpenApiSettings={handleOpenApiSettings}
+        currentView={currentView}
+        onViewChange={setCurrentView}
       />
       
       <div className={`main-content ${sidebarOpen ? '' : 'sidebar-closed'}`}>
@@ -240,45 +349,86 @@ function App() {
               <i className="fas fa-bars"></i>
             </button>
           )}
-          <h1>ChatGPT Clone</h1>
-          <button className="api-settings-button" onClick={handleOpenApiSettings} title="API Settings">
-            <i className="fas fa-key"></i>
-          </button>
+          <h1>
+            <i className="fas fa-brain"></i>
+            OpenMind - Your Mental Health Companion
+          </h1>
+          <div className="header-actions">
+            <button 
+              className="mood-button" 
+              onClick={() => setShowMoodTracker(true)}
+              title="Track your mood"
+            >
+              <i className="fas fa-smile"></i>
+              <span>How are you feeling?</span>
+            </button>
+            <button className="api-settings-button" onClick={handleOpenApiSettings} title="API Settings">
+              <i className="fas fa-key"></i>
+            </button>
+          </div>
         </div>
 
-        <div className="chat-container">
-          {currentChat?.messages.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-content">
-                <i className="fas fa-comments"></i>
-                <h2>How can I help you today?</h2>
-                <div className="example-prompts">
-                  <div className="example-prompt" onClick={() => handleSendMessage("Explain quantum computing in simple terms")}>
-                    <i className="fas fa-lightbulb"></i>
-                    <span>Explain quantum computing in simple terms</span>
-                  </div>
-                  <div className="example-prompt" onClick={() => handleSendMessage("Help me write a creative story")}>
-                    <i className="fas fa-pen"></i>
-                    <span>Help me write a creative story</span>
-                  </div>
-                  <div className="example-prompt" onClick={() => handleSendMessage("What can you do?")}>
-                    <i className="fas fa-question-circle"></i>
-                    <span>What can you do?</span>
+        {currentView === 'chat' && (
+          <>
+            <div className="chat-container">
+              {currentChat?.messages.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-content">
+                    <i className="fas fa-heart"></i>
+                    <h2>Welcome to OpenMind</h2>
+                    <p>Your safe space for mental wellness. I'm here to listen, support, and help you navigate your emotions.</p>
+                    <div className="example-prompts">
+                      <div className="example-prompt" onClick={() => handleSendMessage("I've been feeling overwhelmed lately")}>
+                        <i className="fas fa-comment-dots"></i>
+                        <span>I've been feeling overwhelmed lately</span>
+                      </div>
+                      <div className="example-prompt" onClick={() => handleSendMessage("I'm struggling with anxiety")}>
+                        <i className="fas fa-heart-pulse"></i>
+                        <span>I'm struggling with anxiety</span>
+                      </div>
+                      <div className="example-prompt" onClick={() => handleSendMessage("Can you help me with stress management?")}>
+                        <i className="fas fa-spa"></i>
+                        <span>Help me with stress management</span>
+                      </div>
+                      <div className="example-prompt" onClick={() => handleSendMessage("I want to improve my mental health")}>
+                        <i className="fas fa-seedling"></i>
+                        <span>I want to improve my mental health</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="messages-container">
+                  {currentChat.messages.map((message) => (
+                    <ChatMessage key={message.id} message={message} />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="messages-container">
-              {currentChat.messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
 
-        <ChatInput onSendMessage={handleSendMessage} />
+            <ChatInput onSendMessage={handleSendMessage} />
+          </>
+        )}
+
+        {currentView === 'dashboard' && (
+          <WellnessDashboard 
+            moodHistory={moodHistory}
+            journalEntries={journalEntries}
+            chats={chats}
+          />
+        )}
+
+        {currentView === 'journal' && (
+          <JournalEntry
+            entries={journalEntries}
+            onSave={handleJournalSave}
+          />
+        )}
+
+        {currentView === 'breathing' && (
+          <BreathingExercise />
+        )}
       </div>
     </div>
   );
