@@ -8,6 +8,8 @@ import WellnessDashboard from './components/WellnessDashboard';
 import JournalEntry from './components/JournalEntry';
 import CrisisAlert from './components/CrisisAlert';
 import BreathingExercise from './components/BreathingExercise';
+import Consultants from './components/Consultants';
+import encryptionService from './utils/encryption';
 
 function App() {
   const [chats, setChats] = useState([
@@ -23,15 +25,74 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
   const [showApiModal, setShowApiModal] = useState(!localStorage.getItem('gemini_api_key'));
-  const [currentView, setCurrentView] = useState('chat'); // 'chat', 'dashboard', 'journal', 'breathing'
+  const [currentView, setCurrentView] = useState('chat'); // 'chat', 'dashboard', 'journal', 'breathing', 'consultants'
   const [showMoodTracker, setShowMoodTracker] = useState(false);
   const [showCrisisAlert, setShowCrisisAlert] = useState(false);
   const [crisisMessage, setCrisisMessage] = useState('');
   const [moodHistory, setMoodHistory] = useState(JSON.parse(localStorage.getItem('mood_history') || '[]'));
-  const [journalEntries, setJournalEntries] = useState(JSON.parse(localStorage.getItem('journal_entries') || '[]'));
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [journalLoading, setJournalLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
   const currentChat = chats.find(chat => chat.id === currentChatId);
+
+  // Load and decrypt journal entries on mount
+  useEffect(() => {
+    const loadJournalEntries = async () => {
+      try {
+        const encryptedEntries = JSON.parse(localStorage.getItem('journal_entries_encrypted') || '[]');
+        
+        if (encryptedEntries.length === 0) {
+          // Check for legacy unencrypted entries
+          const legacyEntries = JSON.parse(localStorage.getItem('journal_entries') || '[]');
+          if (legacyEntries.length > 0) {
+            // Migrate legacy entries to encrypted format
+            console.log('Migrating legacy journal entries to encrypted format...');
+            const encrypted = [];
+            for (const entry of legacyEntries) {
+              const encryptedContent = await encryptionService.encryptJournalEntry(entry);
+              encrypted.push({
+                id: entry.id,
+                encrypted: encryptedContent,
+                timestamp: entry.timestamp
+              });
+            }
+            localStorage.setItem('journal_entries_encrypted', JSON.stringify(encrypted));
+            localStorage.removeItem('journal_entries'); // Remove legacy storage
+            setJournalEntries(legacyEntries);
+          }
+          setJournalLoading(false);
+          return;
+        }
+
+        // Decrypt entries
+        const decrypted = [];
+        for (const encEntry of encryptedEntries) {
+          try {
+            const decryptedEntry = await encryptionService.decryptJournalEntry(encEntry.encrypted);
+            decrypted.push(decryptedEntry);
+          } catch (error) {
+            console.error('Failed to decrypt entry:', error);
+            // Keep encrypted entry info but mark as unable to decrypt
+            decrypted.push({
+              id: encEntry.id,
+              content: '[Encrypted - Unable to decrypt]',
+              timestamp: encEntry.timestamp,
+              encrypted: true,
+              error: true
+            });
+          }
+        }
+        setJournalEntries(decrypted);
+      } catch (error) {
+        console.error('Error loading journal entries:', error);
+      } finally {
+        setJournalLoading(false);
+      }
+    };
+
+    loadJournalEntries();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -124,7 +185,7 @@ function App() {
       console.log('Conversation history:', conversationHistory);
 
       // Mental health-focused system instruction
-      const systemInstruction = `You are OpenMind, a compassionate mental health companion AI. Your role is to:
+      const systemInstruction = `You are MindAid, a compassionate mental health companion AI. Your role is to:
 
 1. **Listen with empathy**: Validate emotions without judgment
 2. **Provide support**: Offer evidence-based coping strategies from CBT, DBT, and mindfulness
@@ -292,7 +353,7 @@ function App() {
     setShowMoodTracker(false);
   };
 
-  const handleJournalSave = (entry) => {
+  const handleJournalSave = async (entry) => {
     const journalEntry = {
       id: Date.now(),
       content: entry,
@@ -300,9 +361,28 @@ function App() {
       mood: chats.find(c => c.id === currentChatId)?.mood
     };
     
-    const newEntries = [...journalEntries, journalEntry];
-    setJournalEntries(newEntries);
-    localStorage.setItem('journal_entries', JSON.stringify(newEntries));
+    try {
+      // Encrypt the entry
+      const encryptedContent = await encryptionService.encryptJournalEntry(journalEntry);
+      
+      // Store encrypted version
+      const encryptedEntries = JSON.parse(localStorage.getItem('journal_entries_encrypted') || '[]');
+      encryptedEntries.push({
+        id: journalEntry.id,
+        encrypted: encryptedContent,
+        timestamp: journalEntry.timestamp
+      });
+      localStorage.setItem('journal_entries_encrypted', JSON.stringify(encryptedEntries));
+      
+      // Update state with decrypted version
+      const newEntries = [...journalEntries, journalEntry];
+      setJournalEntries(newEntries);
+      
+      console.log('Journal entry encrypted and saved successfully');
+    } catch (error) {
+      console.error('Error saving encrypted journal entry:', error);
+      alert('Failed to save journal entry. Please try again.');
+    }
   };
 
   return (
@@ -351,7 +431,7 @@ function App() {
           )}
           <h1>
             <i className="fas fa-brain"></i>
-            OpenMind - Your Mental Health Companion
+            MindAid - Your Mental Health Companion
           </h1>
           <div className="header-actions">
             <button 
@@ -375,7 +455,7 @@ function App() {
                 <div className="empty-state">
                   <div className="empty-state-content">
                     <i className="fas fa-heart"></i>
-                    <h2>Welcome to OpenMind</h2>
+                    <h2>Welcome to MindAid</h2>
                     <p>Your safe space for mental wellness. I'm here to listen, support, and help you navigate your emotions.</p>
                     <div className="example-prompts">
                       <div className="example-prompt" onClick={() => handleSendMessage("I've been feeling overwhelmed lately")}>
@@ -428,6 +508,10 @@ function App() {
 
         {currentView === 'breathing' && (
           <BreathingExercise />
+        )}
+
+        {currentView === 'consultants' && (
+          <Consultants />
         )}
       </div>
     </div>

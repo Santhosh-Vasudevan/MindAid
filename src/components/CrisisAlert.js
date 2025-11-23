@@ -29,45 +29,47 @@ function CrisisAlert({ message, onClose }) {
   ];
 
   return (
-    <div className="modal-overlay crisis-overlay">
-      <div className="modal-content crisis-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="crisis-header">
-          <i className="fas fa-heart-pulse"></i>
-          <h2>You're Not Alone - Help is Available</h2>
-        </div>
+    <div className="crisis-overlay" onClick={onClose}>
+      <div className="crisis-modal-clean" onClick={(e) => e.stopPropagation()}>
+        <div className="crisis-scroll-container">
+          <div className="crisis-header-clean">
+            <i className="fas fa-heart-pulse"></i>
+            <h2>You're Not Alone</h2>
+            <p className="crisis-subtitle">Help is available right now</p>
+          </div>
 
-        <div className="modal-body">
-          <div className="crisis-message">
+          <div className="crisis-message-clean">
             <p>
               I'm concerned about what you've shared. Your life matters, and there are people who want to help you through this difficult time.
             </p>
-            <p>
-              Please reach out to one of these professional crisis resources right now:
-            </p>
           </div>
 
-          <div className="crisis-resources">
+          <div className="crisis-resources-clean">
+            <h3>Professional Crisis Resources</h3>
             {resources.map((resource, index) => (
-              <div key={index} className="crisis-resource">
-                <i className={`fas fa-${resource.icon}`}></i>
-                <div className="resource-info">
-                  <h3>{resource.name}</h3>
-                  <p className="resource-phone">{resource.phone}</p>
-                  <p className="resource-desc">{resource.description}</p>
+              <div key={index} className="crisis-resource-card">
+                <div className="resource-icon">
+                  <i className={`fas fa-${resource.icon}`}></i>
+                </div>
+                <div className="resource-details">
+                  <h4>{resource.name}</h4>
+                  <div className="resource-contact">{resource.phone}</div>
+                  <p className="resource-description">{resource.description}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="crisis-footer">
+          <div className="crisis-reminder">
             <p>
               <strong>Remember:</strong> These feelings are temporary. Professional help can make a difference. You deserve support and care.
             </p>
-            <button className="btn-primary crisis-btn" onClick={onClose}>
-              <i className="fas fa-check"></i>
-              I understand - Continue conversation
-            </button>
           </div>
+
+          <button className="crisis-continue-btn" onClick={onClose}>
+            <i className="fas fa-check-circle"></i>
+            I understand - Continue conversation
+          </button>
         </div>
       </div>
     </div>

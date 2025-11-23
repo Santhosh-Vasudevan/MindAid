@@ -1,13 +1,13 @@
 {
-  "name": "openmind",
+  "name": "mindaid",
   "version": "1.0.0",
-  "description": "A ChatGPT clone built with React",
+  "description": "MindAid - AI-Powered Mental Health Companion",
   "main": "index.js",
   "scripts": {
     "start": "webpack serve --mode development --open",
     "build": "webpack --mode production"
   },
-  "keywords": ["react", "openmind", "clone"],
+  "keywords": ["react", "mindaid", "mental-health", "ai-companion"],
   "author": "",
   "license": "MIT",
   "dependencies": {

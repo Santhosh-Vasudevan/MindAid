@@ -54,7 +54,7 @@ function ChatInput({ onSendMessage }) {
         </div>
       </form>
       <div className="input-footer">
-        OpenMind provides emotional support but is not a substitute for professional mental health care. If you're in crisis, please contact emergency services or a crisis hotline.
+        MindAid provides emotional support but is not a substitute for professional mental health care. If you're in crisis, please contact emergency services or a crisis hotline.
       </div>
     </div>
   );

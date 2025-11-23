@@ -7,7 +7,8 @@ function Sidebar({ chats, currentChatId, onNewChat, onSelectChat, onDeleteChat, 
     { id: 'chat', icon: 'comments', label: 'Chat' },
     { id: 'dashboard', icon: 'chart-line', label: 'Wellness Dashboard' },
     { id: 'journal', icon: 'book', label: 'Journal' },
-    { id: 'breathing', icon: 'wind', label: 'Breathing Exercises' }
+    { id: 'breathing', icon: 'wind', label: 'Breathing Exercises' },
+    { id: 'consultants', icon: 'user-doctor', label: 'Find Consultant' }
   ];
 
   return (

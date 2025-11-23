@@ -15,7 +15,7 @@ function ChatMessage({ message }) {
         </div>
         <div className="message-content">
           <div className="message-role">
-            {isUser ? 'You' : 'OpenMind'}
+            {isUser ? 'You' : 'MindAid'}
           </div>
           <div className="message-text">
             {message.isTyping ? (

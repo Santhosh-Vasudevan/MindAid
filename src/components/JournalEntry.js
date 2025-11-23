@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import EncryptionInfo from './EncryptionInfo';
 
 function JournalEntry({ entries, onSave }) {
   const [currentEntry, setCurrentEntry] = useState('');
   const [activeTab, setActiveTab] = useState('write');
+  const [showEncryptionInfo, setShowEncryptionInfo] = useState(false);
 
   const prompts = [
     "What am I grateful for today?",
@@ -25,9 +27,23 @@ function JournalEntry({ entries, onSave }) {
 
   return (
     <div className="journal-simple">
+      {showEncryptionInfo && (
+        <EncryptionInfo onClose={() => setShowEncryptionInfo(false)} />
+      )}
+      
       <div className="journal-header-simple">
         <h1>Private Journal</h1>
-        <p>Your thoughts, stored privately on your device</p>
+        <div className="journal-header-subtitle">
+          <p>Your thoughts, stored privately on your device</p>
+          <button 
+            className="encryption-badge"
+            onClick={() => setShowEncryptionInfo(true)}
+            title="Click to view encryption details"
+          >
+            <i className="fas fa-lock"></i>
+            <span>Encrypted</span>
+          </button>
+        </div>
       </div>
 
       <div className="journal-tabs-simple">

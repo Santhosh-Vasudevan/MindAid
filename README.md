@@ -1,4 +1,4 @@
-# OpenMind - AI-Powered Mental Health Companion 🧠💙
+# MindAid - AI-Powered Mental Health Companion 🧠💙
 
 > **A compassionate, 24×7 mental health support chatbot providing emotional assistance, mood tracking, crisis intervention, and wellness tools.**
 
@@ -6,7 +6,7 @@
 ![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-purple)
 ![License](https://img.shields.io/badge/License-Demo-green)
 
-## 🌟 Why OpenMind?
+## 🌟 Why MindAid?
 
 Mental health services are often:
 - ❌ **Expensive** - Therapy costs $100-300 per session
@@ -14,7 +14,7 @@ Mental health services are often:
 - ❌ **Stigmatized** - Fear of judgment prevents people from seeking help
 - ❌ **Impersonal** - Existing chatbots feel robotic
 
-**OpenMind solves these problems by providing:**
+**MindAid solves these problems by providing:**
 - ✅ **Free, unlimited access** to emotional support
 - ✅ **24×7 availability** - Always there when you need it
 - ✅ **Private & judgment-free** - No stigma, complete anonymity
@@ -106,7 +106,7 @@ The app will open automatically at `http://localhost:3000`
 2. **Get Free Key**: Visit [Google AI Studio](https://makersuite.google.com/app/apikey) to get your free API key
 3. **Test Connection**: Click "Test Connection" to verify
 4. **Save**: Your key is stored securely in browser localStorage
-5. **Start Chatting**: Select your mood and begin your conversation with OpenMind
+5. **Start Chatting**: Select your mood and begin your conversation with MindAid
 
 ---
 
@@ -254,7 +254,7 @@ This is a demo project for mental health awareness. Contributions welcome!
 
 ## 📜 Disclaimer
 
-**⚠️ IMPORTANT: OpenMind is a supportive tool, NOT a replacement for professional mental health care.**
+**⚠️ IMPORTANT: MindAid is a supportive tool, NOT a replacement for professional mental health care.**
 
 If you are experiencing a mental health crisis, please contact:
 - **Emergency Services**: 911 (US)
@@ -262,7 +262,7 @@ If you are experiencing a mental health crisis, please contact:
 - **Crisis Text Line**: Text "HELLO" to 741741 (US)
 - **International Association for Suicide Prevention**: [https://www.iasp.info/resources/Crisis_Centres/](https://www.iasp.info/resources/Crisis_Centres/)
 
-OpenMind is designed to provide emotional support and coping tools, but it cannot replace the expertise of licensed mental health professionals.
+MindAid is designed to provide emotional support and coping tools, but it cannot replace the expertise of licensed mental health professionals.
 
 ---
 
