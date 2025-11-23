@@ -112,7 +112,7 @@ function App() {
 
     // Crisis keyword detection
     const crisisKeywords = [
-      'suicide', 'kill myself', 'end my life', 'want to die', 'self harm',
+      'suicide', 'kill myself', 'end my life', 'want to die', 'die', 'kill', 'self harm',
       'hurt myself', 'no reason to live', 'better off dead', 'suicidal'
     ];
     
@@ -431,7 +431,7 @@ function App() {
           )}
           <h1>
             <i className="fas fa-brain"></i>
-            MindAid - Your Mental Health Companion
+            MindAid
           </h1>
           <div className="header-actions">
             <button 
