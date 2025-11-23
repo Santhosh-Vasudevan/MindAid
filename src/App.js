@@ -9,7 +9,9 @@ import JournalEntry from './components/JournalEntry';
 import CrisisAlert from './components/CrisisAlert';
 import BreathingExercise from './components/BreathingExercise';
 import Consultants from './components/Consultants';
+import FirebaseSetup from './components/FirebaseSetup';
 import encryptionService from './utils/encryption';
+import firebaseService from './utils/firebaseService';
 
 function App() {
   const [chats, setChats] = useState([
@@ -29,16 +31,114 @@ function App() {
   const [showMoodTracker, setShowMoodTracker] = useState(false);
   const [showCrisisAlert, setShowCrisisAlert] = useState(false);
   const [crisisMessage, setCrisisMessage] = useState('');
-  const [moodHistory, setMoodHistory] = useState(JSON.parse(localStorage.getItem('mood_history') || '[]'));
+  const [moodHistory, setMoodHistory] = useState([]);
   const [journalEntries, setJournalEntries] = useState([]);
   const [journalLoading, setJournalLoading] = useState(true);
+  const [showFirebaseSetup, setShowFirebaseSetup] = useState(false);
+  const [useFirebase, setUseFirebase] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const messagesEndRef = useRef(null);
 
   const currentChat = chats.find(chat => chat.id === currentChatId);
 
-  // Load and decrypt journal entries on mount
+  // Initialize Firebase and load data
   useEffect(() => {
-    const loadJournalEntries = async () => {
+    const initializeApp = async () => {
+      // Check if Firebase should be used
+      const firebaseConfigured = localStorage.getItem('firebase_configured') === 'true';
+      const firebaseEnabled = localStorage.getItem('firebase_enabled') !== 'false';
+      
+      console.log('🔥 Firebase Status:', { firebaseConfigured, firebaseEnabled });
+      
+      // Auto-configure if using real Firebase config
+      if (!firebaseConfigured) {
+        console.log('🔧 Auto-configuring Firebase...');
+        localStorage.setItem('firebase_configured', 'true');
+        console.log('✅ Firebase auto-configured and enabled');
+      }
+      
+      // Now check again if we should use Firebase (after auto-config)
+      const shouldUseFirebase = localStorage.getItem('firebase_configured') === 'true' && 
+                                 localStorage.getItem('firebase_enabled') !== 'false';
+      
+      if (shouldUseFirebase) {
+        setIsLoadingData(true);
+        setUseFirebase(true);
+        firebaseService.initialize();
+        console.log('✅ Firebase initialized');
+        
+        try {
+          // Test Firebase connection
+          const connected = await firebaseService.checkConnection();
+          console.log('🌐 Firebase connection:', connected ? 'SUCCESS' : 'FAILED');
+          
+          // Load data from Firebase
+          console.log('🔄 Starting data load from Firebase...');
+          
+          const [fbChats, fbMoodHistory, fbJournalEntries] = await Promise.all([
+            firebaseService.getChats(),
+            firebaseService.getMoodHistory(),
+            firebaseService.getJournalEntries()
+          ]);
+          
+          console.log('📊 Data loaded from Firebase:', { 
+            chats: fbChats.length, 
+            moods: fbMoodHistory.length, 
+            journals: fbJournalEntries.length 
+          });
+          
+          if (fbChats && fbChats.length > 0) {
+            console.log('✅ Setting', fbChats.length, 'chats in state');
+            console.log('📋 First chat ID:', fbChats[0].id);
+            setChats(fbChats);
+            setCurrentChatId(fbChats[0].id);
+            console.log('✅ Chats state updated');
+          } else {
+            console.log('⚠️ No chats found in Firebase');
+            console.log('📱 Keeping default empty chat with ID:', currentChatId);
+          }
+          
+          if (fbMoodHistory.length > 0) {
+            setMoodHistory(fbMoodHistory);
+          }
+          
+          if (fbJournalEntries.length > 0) {
+            setJournalEntries(fbJournalEntries);
+          }
+          
+          setJournalLoading(false);
+          setIsLoadingData(false);
+        } catch (error) {
+          console.error('❌ Error loading data from Firebase:', error);
+          console.error('Error details:', error.message);
+          // Fallback to localStorage
+          loadFromLocalStorage();
+          setIsLoadingData(false);
+        }
+      } else {
+        console.log('📱 Using localStorage only');
+        // Load from localStorage
+        loadFromLocalStorage();
+        setIsLoadingData(false);
+        
+        // Show Firebase setup if not configured
+        if (!firebaseConfigured && localStorage.getItem('firebase_setup_shown') !== 'true') {
+          setShowFirebaseSetup(true);
+          localStorage.setItem('firebase_setup_shown', 'true');
+        }
+      }
+    };
+    
+    const loadFromLocalStorage = async () => {
+      // Load mood history from localStorage
+      const localMoodHistory = JSON.parse(localStorage.getItem('mood_history') || '[]');
+      setMoodHistory(localMoodHistory);
+      
+      // Load journal entries from localStorage
+      await loadJournalEntriesFromLocalStorage();
+    };
+    
+    const loadJournalEntriesFromLocalStorage = async () => {
       try {
         const encryptedEntries = JSON.parse(localStorage.getItem('journal_entries_encrypted') || '[]');
         
@@ -58,7 +158,7 @@ function App() {
               });
             }
             localStorage.setItem('journal_entries_encrypted', JSON.stringify(encrypted));
-            localStorage.removeItem('journal_entries'); // Remove legacy storage
+            localStorage.removeItem('journal_entries');
             setJournalEntries(legacyEntries);
           }
           setJournalLoading(false);
@@ -73,7 +173,6 @@ function App() {
             decrypted.push(decryptedEntry);
           } catch (error) {
             console.error('Failed to decrypt entry:', error);
-            // Keep encrypted entry info but mark as unable to decrypt
             decrypted.push({
               id: encEntry.id,
               content: '[Encrypted - Unable to decrypt]',
@@ -90,9 +189,40 @@ function App() {
         setJournalLoading(false);
       }
     };
-
-    loadJournalEntries();
+    
+    initializeApp();
   }, []);
+
+  // Save chats to storage whenever they change
+  useEffect(() => {
+    if (chats.length === 0) return;
+    
+    // Don't save during initial mount - wait for Firebase initialization
+    if (!useFirebase && localStorage.getItem('firebase_configured') === 'true') {
+      return; // Skip saving while Firebase is initializing
+    }
+    
+    const saveChats = async () => {
+      console.log('💾 Saving chats... useFirebase:', useFirebase);
+      if (useFirebase) {
+        // Save to Firebase
+        for (const chat of chats) {
+          try {
+            await firebaseService.saveChat(chat);
+            console.log('✅ Chat saved to Firebase:', chat.id);
+          } catch (error) {
+            console.error('❌ Error saving chat to Firebase:', error);
+          }
+        }
+      } else {
+        // Save to localStorage as fallback
+        localStorage.setItem('chats', JSON.stringify(chats));
+        console.log('💾 Chats saved to localStorage');
+      }
+    };
+    
+    saveChats();
+  }, [chats, useFirebase]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -333,16 +463,65 @@ function App() {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const handleMoodSelect = (mood) => {
+  const handleMoodSelect = async (mood) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Check if there's already an entry for today
+    const existingTodayEntry = moodHistory.find(entry => {
+      const entryDate = new Date(entry.timestamp);
+      entryDate.setHours(0, 0, 0, 0);
+      return entryDate.getTime() === today.getTime();
+    });
+    
     const moodEntry = {
       mood,
       timestamp: new Date().toISOString(),
       chatId: currentChatId
     };
     
-    const newMoodHistory = [...moodHistory, moodEntry];
+    let newMoodHistory;
+    if (existingTodayEntry) {
+      // Update existing entry for today
+      newMoodHistory = moodHistory.map(entry => {
+        const entryDate = new Date(entry.timestamp);
+        entryDate.setHours(0, 0, 0, 0);
+        if (entryDate.getTime() === today.getTime()) {
+          return { ...entry, ...moodEntry };
+        }
+        return entry;
+      });
+    } else {
+      // Add new entry
+      newMoodHistory = [...moodHistory, moodEntry];
+    }
+    
     setMoodHistory(newMoodHistory);
-    localStorage.setItem('mood_history', JSON.stringify(newMoodHistory));
+    
+    // Save to storage
+    if (useFirebase) {
+      try {
+        if (existingTodayEntry && existingTodayEntry.id) {
+          // Update existing entry in Firebase
+          await firebaseService.updateMoodEntry(existingTodayEntry.id, moodEntry);
+        } else {
+          // Check Firebase for today's entry (in case of sync issues)
+          const todaysFirebaseEntry = await firebaseService.getTodaysMoodEntry();
+          if (todaysFirebaseEntry) {
+            await firebaseService.updateMoodEntry(todaysFirebaseEntry.id, moodEntry);
+          } else {
+            // Create new entry
+            await firebaseService.saveMoodEntry(moodEntry);
+          }
+        }
+      } catch (error) {
+        console.error('Error saving mood to Firebase:', error);
+        // Fallback to localStorage
+        localStorage.setItem('mood_history', JSON.stringify(newMoodHistory));
+      }
+    } else {
+      localStorage.setItem('mood_history', JSON.stringify(newMoodHistory));
+    }
     
     setChats(prevChats =>
       prevChats.map(chat =>
@@ -362,23 +541,31 @@ function App() {
     };
     
     try {
-      // Encrypt the entry
-      const encryptedContent = await encryptionService.encryptJournalEntry(journalEntry);
-      
-      // Store encrypted version
-      const encryptedEntries = JSON.parse(localStorage.getItem('journal_entries_encrypted') || '[]');
-      encryptedEntries.push({
-        id: journalEntry.id,
-        encrypted: encryptedContent,
-        timestamp: journalEntry.timestamp
-      });
-      localStorage.setItem('journal_entries_encrypted', JSON.stringify(encryptedEntries));
+      // Save to storage
+      console.log('📓 Saving journal entry... useFirebase:', useFirebase);
+      if (useFirebase) {
+        // Save to Firebase (encryption handled in firebaseService)
+        await firebaseService.saveJournalEntry(journalEntry);
+        console.log('✅ Journal entry saved to Firebase (encrypted)');
+      } else {
+        // Encrypt and save to localStorage
+        const encryptedContent = await encryptionService.encryptJournalEntry(journalEntry);
+        
+        const encryptedEntries = JSON.parse(localStorage.getItem('journal_entries_encrypted') || '[]');
+        encryptedEntries.push({
+          id: journalEntry.id,
+          encrypted: encryptedContent,
+          timestamp: journalEntry.timestamp
+        });
+        localStorage.setItem('journal_entries_encrypted', JSON.stringify(encryptedEntries));
+        console.log('💾 Journal entry saved to localStorage (encrypted)');
+      }
       
       // Update state with decrypted version
       const newEntries = [...journalEntries, journalEntry];
       setJournalEntries(newEntries);
       
-      console.log('Journal entry encrypted and saved successfully');
+      console.log('✅ Journal entry encrypted and saved successfully');
     } catch (error) {
       console.error('Error saving encrypted journal entry:', error);
       alert('Failed to save journal entry. Please try again.');
@@ -387,6 +574,56 @@ function App() {
 
   return (
     <div className="app">
+      {isLoadingData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          color: '#e0e7ff'
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            border: '4px solid rgba(139, 92, 246, 0.2)',
+            borderTop: '4px solid #8b5cf6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: '20px'
+          }}></div>
+          <div style={{
+            fontSize: '18px',
+            fontWeight: '500',
+            marginBottom: '8px'
+          }}>Loading MindAid</div>
+          <div style={{
+            fontSize: '14px',
+            color: '#94a3b8'
+          }}>Syncing your data...</div>
+        </div>
+      )}
+      
+      {showFirebaseSetup && (
+        <FirebaseSetup 
+          onComplete={() => {
+            setShowFirebaseSetup(false);
+            setUseFirebase(true);
+            window.location.reload(); // Reload to sync data
+          }}
+          onSkip={() => {
+            setShowFirebaseSetup(false);
+            localStorage.setItem('firebase_enabled', 'false');
+          }}
+        />
+      )}
+
       {showApiModal && (
         <ApiKeyModal 
           onSave={handleSaveApiKey} 

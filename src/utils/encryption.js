@@ -178,7 +178,8 @@ class EncryptionService {
       const decryptedData = await this.decrypt(encryptedEntry, key);
       return JSON.parse(decryptedData);
     } catch (error) {
-      console.error('Decryption failed:', error);
+      // Silently fail - encryption keys may have been cleared from browser storage
+      // This is expected behavior when localStorage is cleared
       throw new Error('Failed to decrypt journal entry. Password may be incorrect.');
     }
   }

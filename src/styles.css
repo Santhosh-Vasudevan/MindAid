@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+/* Loading Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
   background-color: #343541;
@@ -30,56 +36,66 @@ body {
 /* Sidebar Styles */
 .sidebar {
   width: 260px;
-  background-color: #202123;
+  background: linear-gradient(180deg, #1a1b1e 0%, #202123 100%);
   display: flex;
   flex-direction: column;
   transition: transform 0.3s ease;
   position: relative;
   z-index: 10;
+  border-right: 1px solid #2d2e30;
+  flex-shrink: 0;
 }
 
 .sidebar.closed {
   transform: translateX(-100%);
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100vh;
 }
 
 .sidebar-header {
-  padding: 8px;
-  border-bottom: 1px solid #444654;
+  padding: 12px;
+  border-bottom: 1px solid #2d2e30;
   display: flex;
   gap: 8px;
 }
 
 .new-chat-button {
   flex: 1;
-  background-color: transparent;
-  border: 1px solid #565869;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
   color: #fff;
-  padding: 12px 16px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  transition: background-color 0.2s;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .new-chat-button:hover {
-  background-color: #2a2b32;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .sidebar-close {
-  background-color: transparent;
-  border: 1px solid #565869;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid #2d2e30;
   color: #fff;
-  padding: 12px;
-  border-radius: 6px;
+  padding: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .sidebar-close:hover {
-  background-color: #2a2b32;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #667eea;
 }
 
 .chat-list {
@@ -91,55 +107,67 @@ body {
 .chat-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 4px;
-  border-radius: 6px;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 4px 0;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   position: relative;
   color: #ececf1;
+  border: 1px solid transparent;
 }
 
 .chat-item:hover {
-  background-color: #2a2b32;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateX(2px);
 }
 
 .chat-item.active {
-  background-color: #343541;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+  border-color: #667eea;
+  font-weight: 600;
 }
 
 .chat-item i {
-  font-size: 14px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
 .chat-title {
   flex: 1;
-  font-size: 14px;
+  font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .delete-chat-button {
   background-color: transparent;
   border: none;
-  color: #acacbe;
+  color: #6b7280;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s, color 0.2s;
+  border-radius: 6px;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.chat-item:hover .delete-chat-button {
+  opacity: 1;
 }
 
 .delete-chat-button:hover {
-  background-color: #565869;
-  color: #fff;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 .sidebar-footer {
   padding: 12px;
-  border-top: 1px solid #444654;
+  border-top: 1px solid #2d2e30;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .api-settings-button-sidebar {
@@ -147,11 +175,12 @@ body {
   background-color: transparent;
   border: 1px solid #565869;
   color: #fff;
-  padding: 10px;
+  padding: 8px;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
+  font-size: 13px;
   justify-content: center;
   gap: 8px;
   font-size: 14px;
@@ -200,11 +229,13 @@ body {
   flex-direction: column;
   background-color: #343541;
   margin-left: 0;
-  transition: margin-left 0.3s ease;
+  width: calc(100% - 260px);
+  transition: width 0.3s ease;
   position: relative;
 }
 
 .main-content.sidebar-closed {
+  width: 100%;
   margin-left: 0;
 }
 
@@ -881,50 +912,53 @@ body {
 
 /* Sidebar Navigation Enhancements */
 .sidebar-nav {
-  padding: 16px 12px;
-  border-bottom: 1px solid #444654;
+  padding: 12px;
+  border-bottom: 1px solid #2d2e30;
 }
 
 .sidebar-nav h3 {
-  font-size: 11px;
-  color: #8e8ea0;
-  padding: 0 8px 12px 8px;
+  font-size: 10px;
+  color: #6b7280;
+  padding: 0 8px 10px 8px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 600;
+  letter-spacing: 1px;
+  font-weight: 700;
 }
 
 .nav-item {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 6px;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
   background: transparent;
   color: #ececf1;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   text-align: left;
   transition: all 0.2s;
+  border: 1px solid transparent;
 }
 
 .nav-item:hover {
-  background-color: #2a2b32;
-  transform: translateX(2px);
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateX(3px);
+  border-color: rgba(102, 126, 234, 0.3);
 }
 
 .nav-item.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.4);
+  border-color: transparent;
 }
 
 .nav-item i {
-  font-size: 16px;
+  font-size: 15px;
   width: 20px;
   text-align: center;
 }
@@ -943,17 +977,15 @@ body {
 
 /* Mood Tracker Modal */
 .mood-tracker-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.3s ease;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 560px;
+  width: 90%;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 @keyframes fadeIn {
@@ -965,19 +997,9 @@ body {
   }
 }
 
-.mood-tracker-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40px;
-  border-radius: 20px;
-  max-width: 600px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  animation: slideUp 0.3s ease;
-}
-
 @keyframes slideUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(30px);
     opacity: 0;
   }
   to {
@@ -986,57 +1008,118 @@ body {
   }
 }
 
-.mood-tracker-content h2 {
-  text-align: center;
-  margin-bottom: 12px;
-  font-size: 28px;
-  color: #fff;
-}
-
-.mood-tracker-content p {
+.mood-tracker-header {
   text-align: center;
   margin-bottom: 32px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 16px;
 }
 
-.mood-options {
-  display: flex;
-  justify-content: space-around;
-  gap: 16px;
-  flex-wrap: wrap;
+.mood-tracker-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  animation: float 3s ease-in-out infinite;
 }
 
-.mood-option {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  padding: 24px 20px;
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.mood-tracker-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f9fafb;
+  margin: 0 0 8px 0;
+}
+
+.mood-tracker-header p {
+  color: #9ca3af;
+  font-size: 15px;
+  margin: 0;
+}
+
+.mood-options-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.mood-option-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
+  padding: 20px 12px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s ease;
   text-align: center;
-  flex: 1;
-  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
 }
 
-.mood-option:hover {
-  background: rgba(255, 255, 255, 0.3);
+.mood-option-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #667eea;
   transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
 }
 
-.mood-emoji {
-  font-size: 48px;
-  margin-bottom: 12px;
-  display: block;
+.mood-option-card:active {
+  transform: translateY(-2px);
 }
 
-.mood-label {
-  font-size: 16px;
+.mood-emoji-large {
+  font-size: 40px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.mood-option-card:hover .mood-emoji-large {
+  transform: scale(1.15);
+}
+
+.mood-label-text {
+  font-size: 13px;
   font-weight: 600;
-  color: #fff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-transform: capitalize;
+}
+
+.mood-footer-tip {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.tip-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .mood-options-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .mood-tracker-modal {
+    padding: 32px 24px;
+  }
+  
+  .mood-emoji-large {
+    font-size: 36px;
+  }
+  
+  .mood-option-card {
+    padding: 16px 8px;
+  }
 }
 
 /* Crisis Alert Modal - Clean Design */
@@ -1782,8 +1865,7 @@ body {
 
 .dashboard-simple {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 24px;
+  gap: 20px;
   margin-bottom: 50px;
 }
 
@@ -1791,7 +1873,7 @@ body {
   background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
   border: 2px solid #444654;
   border-radius: 20px;
-  padding: 30px;
+  padding: 10px;
   display: flex;
   align-items: center;
   gap: 20px;
@@ -1826,7 +1908,7 @@ body {
   background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
   border: 2px solid #444654;
   border-radius: 20px;
-  padding: 40px;
+  padding: 25px;
 }
 
 .mood-week h3 {
@@ -1879,7 +1961,7 @@ body {
   background: rgba(102, 126, 234, 0.1);
   border: 2px solid #667eea;
   border-radius: 16px;
-  padding: 30px;
+  padding: 20px ;
   text-align: center;
   transition: all 0.3s;
 }
@@ -2817,4 +2899,215 @@ body {
 
 .reset-encryption-btn i {
   font-size: 16px;
+}
+
+/* Firebase Setup Modal */
+.firebase-setup-modal {
+  max-width: 800px;
+}
+
+.firebase-configure,
+.firebase-migrate,
+.firebase-complete {
+  text-align: center;
+}
+
+.setup-icon,
+.success-icon {
+  font-size: 80px;
+  margin-bottom: 24px;
+}
+
+.setup-icon i {
+  color: #667eea;
+}
+
+.success-icon i {
+  color: #48bb78;
+}
+
+.firebase-configure h3,
+.firebase-migrate h3,
+.firebase-complete h3 {
+  font-size: 28px;
+  color: #2d3748;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.firebase-configure p,
+.firebase-migrate p,
+.firebase-complete p {
+  font-size: 16px;
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.setup-steps {
+  text-align: left;
+  background: #f7fafc;
+  padding: 24px;
+  border-radius: 12px;
+  margin: 24px 0;
+}
+
+.setup-steps h4 {
+  font-size: 18px;
+  color: #2d3748;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.setup-steps ol {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.setup-steps ol li {
+  margin-bottom: 16px;
+  color: #4a5568;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.setup-steps ol li:last-child {
+  margin-bottom: 0;
+}
+
+.setup-steps strong {
+  color: #2d3748;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.setup-steps a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.setup-steps a:hover {
+  text-decoration: underline;
+}
+
+.setup-steps code {
+  background: #2d3748;
+  color: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.firebase-note {
+  background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%);
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid #38b2ac;
+  display: flex;
+  gap: 12px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.firebase-note i {
+  color: #38b2ac;
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.firebase-note p {
+  margin: 0;
+  font-size: 14px;
+  color: #2d3748;
+  line-height: 1.6;
+}
+
+.firebase-note strong {
+  color: #2c7a7b;
+}
+
+.migration-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.migration-info .info-item {
+  background: #f7fafc;
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid #e2e8f0;
+}
+
+.migration-info .info-item i {
+  font-size: 24px;
+  color: #667eea;
+}
+
+.migration-info .info-item span {
+  font-size: 15px;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.migration-status {
+  background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%);
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.migration-status i {
+  color: #38b2ac;
+  font-size: 20px;
+}
+
+.migration-status span {
+  color: #2c7a7b;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.migration-error {
+  background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.migration-error i {
+  color: #e53e3e;
+  font-size: 20px;
+}
+
+.migration-error span {
+  color: #c53030;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.success-message {
+  color: #2c7a7b !important;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .migration-info {
+    grid-template-columns: 1fr;
+  }
 }
