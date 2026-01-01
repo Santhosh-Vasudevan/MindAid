@@ -28,7 +28,7 @@ class FirebaseService {
       await getDoc(testRef);
       return true;
     } catch (error) {
-      console.error('❌ Firebase connection error:', error);
+      console.error('[FirebaseService] Connection error:', error.message);
       return false;
     }
   }
@@ -36,23 +36,19 @@ class FirebaseService {
   // Initialize with user ID (can be device ID or authenticated user ID)
   initialize(userId) {
     if (!userId) {
-      // Generate a unique device ID if no user ID provided
       let deviceId = localStorage.getItem('device_id');
       if (!deviceId) {
         deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         localStorage.setItem('device_id', deviceId);
-        console.log('🆔 Generated new device ID:', deviceId);
       }
       this.userId = deviceId;
     } else {
       this.userId = userId;
     }
     this.isInitialized = true;
-    console.log('🔥 FirebaseService initialized with userId:', this.userId);
-    
-    // Create user document if it doesn't exist (so subcollections show in console)
+    // info: FirebaseService initialized
+    console.info('[FirebaseService] Initialized with userId:', this.userId);
     this.ensureUserDocument();
-    
     return this.userId;
   }
 
@@ -66,7 +62,7 @@ class FirebaseService {
         lastActive: new Date().toISOString()
       }, { merge: true });
     } catch (error) {
-      console.error('Error creating user document:', error);
+      console.error('[FirebaseService] Error creating user document:', error.message);
     }
   }
 
@@ -84,7 +80,6 @@ class FirebaseService {
     try {
       const userId = this.getUserId();
       const chatRef = doc(db, 'users', userId, 'chats', chat.id.toString());
-      
       const chatData = {
         id: chat.id,
         title: chat.title,
@@ -92,21 +87,12 @@ class FirebaseService {
         mood: chat.mood || null,
         timestamp: chat.timestamp || new Date().toISOString()
       };
-      
-      console.log('💾 Saving chat to Firebase:', {
-        chatId: chat.id,
-        title: chatData.title,
-        messageCount: chatData.messages.length,
-        path: `users/${userId}/chats/${chat.id}`
-      });
-      
       await setDoc(chatRef, chatData, { merge: true });
-      
-      console.log('✅ Chat saved successfully to Firebase:', chat.id, 'with', chatData.messages.length, 'messages');
+      // info: Chat saved
+      console.info('[FirebaseService] Chat saved:', chat.id);
       return true;
     } catch (error) {
-      console.error('❌ Error saving chat to Firebase:', error);
-      console.error('Error details:', error.message);
+      console.error('[FirebaseService] Error saving chat:', error.message);
       throw error;
     }
   }
@@ -116,24 +102,13 @@ class FirebaseService {
     try {
       const userId = this.getUserId();
       const chatsRef = collection(db, 'users', userId, 'chats');
-      
-      console.log('📥 Fetching chats for userId:', userId);
-      console.log('📍 Collection path: users/' + userId + '/chats');
-      
       const querySnapshot = await getDocs(chatsRef);
       const chats = [];
-      
-      console.log('📊 Found', querySnapshot.size, 'chat documents in Firestore');
-      
       if (querySnapshot.empty) {
-        console.log('⚠️ No chat documents found in Firestore');
         return [];
       }
-      
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        console.log('📄 Raw document data:', doc.id, data);
-        
         const chat = {
           id: doc.id.includes('_') ? doc.id : parseInt(doc.id),
           title: data.title || 'Untitled Chat',
@@ -141,22 +116,14 @@ class FirebaseService {
           mood: data.mood || null,
           timestamp: data.timestamp || new Date().toISOString()
         };
-        
         chats.push(chat);
-        console.log('✅ Loaded chat:', chat.id, 'Title:', chat.title, 'Messages:', chat.messages.length);
       });
-      
-      // Sort by timestamp descending (newest first)
       chats.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      
-      console.log('📦 Successfully loaded', chats.length, 'chats from Firebase');
-      console.log('📋 Chat IDs:', chats.map(c => c.id));
+      // info: Chats loaded
+      console.info('[FirebaseService] Loaded chats:', chats.length);
       return chats;
     } catch (error) {
-      console.error('❌ Error loading chats from Firebase:', error);
-      console.error('❌ Error name:', error.name);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
+      console.error('[FirebaseService] Error loading chats:', error.message);
       return [];
     }
   }
