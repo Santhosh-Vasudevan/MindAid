@@ -44,84 +44,39 @@ function App() {
   // Initialize Firebase and load data
   useEffect(() => {
     const initializeApp = async () => {
-      // Check if Firebase should be used
       const firebaseConfigured = localStorage.getItem('firebase_configured') === 'true';
-      const firebaseEnabled = localStorage.getItem('firebase_enabled') !== 'false';
-      
-      console.log('🔥 Firebase Status:', { firebaseConfigured, firebaseEnabled });
-      
-      // Auto-configure if using real Firebase config
-      if (!firebaseConfigured) {
-        console.log('🔧 Auto-configuring Firebase...');
-        localStorage.setItem('firebase_configured', 'true');
-        console.log('✅ Firebase auto-configured and enabled');
-      }
-      
-      // Now check again if we should use Firebase (after auto-config)
-      const shouldUseFirebase = localStorage.getItem('firebase_configured') === 'true' && 
-                                 localStorage.getItem('firebase_enabled') !== 'false';
-      
+      const shouldUseFirebase = localStorage.getItem('firebase_enabled') !== 'false' && firebaseConfigured;
       if (shouldUseFirebase) {
         setIsLoadingData(true);
         setUseFirebase(true);
         firebaseService.initialize();
-        console.log('✅ Firebase initialized');
-        
         try {
-          // Test Firebase connection
           const connected = await firebaseService.checkConnection();
-          console.log('🌐 Firebase connection:', connected ? 'SUCCESS' : 'FAILED');
-          
-          // Load data from Firebase
-          console.log('🔄 Starting data load from Firebase...');
-          
           const [fbChats, fbMoodHistory, fbJournalEntries] = await Promise.all([
             firebaseService.getChats(),
             firebaseService.getMoodHistory(),
             firebaseService.getJournalEntries()
           ]);
-          
-          console.log('📊 Data loaded from Firebase:', { 
-            chats: fbChats.length, 
-            moods: fbMoodHistory.length, 
-            journals: fbJournalEntries.length 
-          });
-          
           if (fbChats && fbChats.length > 0) {
-            console.log('✅ Setting', fbChats.length, 'chats in state');
-            console.log('📋 First chat ID:', fbChats[0].id);
             setChats(fbChats);
             setCurrentChatId(fbChats[0].id);
-            console.log('✅ Chats state updated');
-          } else {
-            console.log('⚠️ No chats found in Firebase');
-            console.log('📱 Keeping default empty chat with ID:', currentChatId);
           }
-          
           if (fbMoodHistory.length > 0) {
             setMoodHistory(fbMoodHistory);
           }
-          
           if (fbJournalEntries.length > 0) {
             setJournalEntries(fbJournalEntries);
           }
-          
           setJournalLoading(false);
           setIsLoadingData(false);
         } catch (error) {
-          console.error('❌ Error loading data from Firebase:', error);
-          console.error('Error details:', error.message);
-          // Fallback to localStorage
+          console.error('Error loading data from Firebase:', error);
           loadFromLocalStorage();
           setIsLoadingData(false);
         }
       } else {
-        console.log('📱 Using localStorage only');
-        // Load from localStorage
         loadFromLocalStorage();
         setIsLoadingData(false);
-        
-        // Show Firebase setup if not configured
         if (!firebaseConfigured && localStorage.getItem('firebase_setup_shown') !== 'true') {
           setShowFirebaseSetup(true);
           localStorage.setItem('firebase_setup_shown', 'true');
@@ -131,8 +86,7 @@ function App() {
     
     const loadFromLocalStorage = async () => {
       // Load mood history from localStorage
-      const localMoodHistory = JSON.parse(localStorage.getItem('mood_history') || '[]');
-      setMoodHistory(localMoodHistory);
+      setMoodHistory(JSON.parse(localStorage.getItem('mood_history') || '[]'));
       
       // Load journal entries from localStorage
       await loadJournalEntriesFromLocalStorage();
@@ -147,7 +101,6 @@ function App() {
           const legacyEntries = JSON.parse(localStorage.getItem('journal_entries') || '[]');
           if (legacyEntries.length > 0) {
             // Migrate legacy entries to encrypted format
-            console.log('Migrating legacy journal entries to encrypted format...');
             const encrypted = [];
             for (const entry of legacyEntries) {
               const encryptedContent = await encryptionService.encryptJournalEntry(entry);
@@ -562,7 +515,6 @@ function App() {
       }
       
       // Update state with decrypted version
-      const newEntries = [...journalEntries, journalEntry];
       setJournalEntries(newEntries);
       
       console.log('✅ Journal entry encrypted and saved successfully');
@@ -578,7 +530,6 @@ function App() {
         <div style={{
           position: 'fixed',
           top: 0,
-          left: 0,
           right: 0,
           bottom: 0,
           backgroundColor: 'rgba(15, 23, 42, 0.95)',

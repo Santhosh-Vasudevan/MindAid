@@ -46,8 +46,7 @@ class FirebaseService {
       this.userId = userId;
     }
     this.isInitialized = true;
-    // info: FirebaseService initialized
-    console.info('[FirebaseService] Initialized with userId:', this.userId);
+    // ...existing code...
     this.ensureUserDocument();
     return this.userId;
   }
@@ -88,8 +87,7 @@ class FirebaseService {
         timestamp: chat.timestamp || new Date().toISOString()
       };
       await setDoc(chatRef, chatData, { merge: true });
-      // info: Chat saved
-      console.info('[FirebaseService] Chat saved:', chat.id);
+      // ...existing code...
       return true;
     } catch (error) {
       console.error('[FirebaseService] Error saving chat:', error.message);
@@ -119,8 +117,7 @@ class FirebaseService {
         chats.push(chat);
       });
       chats.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      // info: Chats loaded
-      console.info('[FirebaseService] Loaded chats:', chats.length);
+      // ...existing code...
       return chats;
     } catch (error) {
       console.error('[FirebaseService] Error loading chats:', error.message);
@@ -134,7 +131,7 @@ class FirebaseService {
       const userId = this.getUserId();
       const chatRef = doc(db, 'users', userId, 'chats', chatId.toString());
       await deleteDoc(chatRef);
-      console.log('Chat deleted from Firebase:', chatId);
+      // ...existing code...
       return true;
     } catch (error) {
       console.error('Error deleting chat from Firebase:', error);
@@ -233,24 +230,15 @@ class FirebaseService {
       const userId = this.getUserId();
       const moodRef = collection(db, 'users', userId, 'moodHistory');
       
-      console.log('📥 Fetching mood history for userId:', userId);
-      
       const querySnapshot = await getDocs(moodRef);
       const moodHistory = [];
-      
-      console.log('📊 Found', querySnapshot.size, 'mood documents');
-      
       querySnapshot.forEach((doc) => {
         moodHistory.push({
           id: doc.id,
           ...doc.data()
         });
       });
-      
-      // Sort by timestamp ascending
       moodHistory.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      
-      console.log('📦 Loaded', moodHistory.length, 'mood entries from Firebase');
       return moodHistory;
     } catch (error) {
       console.error('❌ Error loading mood history from Firebase:', error);
@@ -265,27 +253,14 @@ class FirebaseService {
     try {
       const userId = this.getUserId();
       
-      console.log('📓 Saving journal to Firebase:', {
-        userId,
-        path: `users/${userId}/journalEntries/${journalEntry.id}`,
-        entryId: journalEntry.id,
-        contentLength: journalEntry.content?.length || 0
-      });
-      
-      // Encrypt the entry before saving
       const encryptedContent = await encryptionService.encryptJournalEntry(journalEntry);
-      console.log('🔐 Journal entry encrypted successfully');
-      
       const entryRef = doc(db, 'users', userId, 'journalEntries', journalEntry.id.toString());
-      
       await setDoc(entryRef, {
         id: journalEntry.id,
         encrypted: encryptedContent,
         timestamp: journalEntry.timestamp,
         createdAt: new Date().toISOString()
       });
-      
-      console.log('✅ Encrypted journal entry saved to Firebase:', journalEntry.id);
       return true;
     } catch (error) {
       console.error('❌ Error saving journal entry to Firebase:', error);
@@ -300,30 +275,18 @@ class FirebaseService {
       const userId = this.getUserId();
       const entriesRef = collection(db, 'users', userId, 'journalEntries');
       
-      console.log('📥 Fetching journal entries for userId:', userId);
-      
       const querySnapshot = await getDocs(entriesRef);
       const entries = [];
-      
-      console.log('📊 Found', querySnapshot.size, 'journal documents');
-      
       querySnapshot.forEach((doc) => {
         entries.push(doc.data());
       });
-      
-      console.log('🔐 Loaded', entries.length, 'encrypted journal entries from Firebase');
-      
       // Decrypt entries
       const decryptedEntries = [];
       for (const entry of entries) {
         try {
           const decrypted = await encryptionService.decryptJournalEntry(entry.encrypted);
           decryptedEntries.push(decrypted);
-          console.log('✅ Decrypted journal entry:', decrypted.id);
         } catch (error) {
-          // Silently handle decryption errors (encryption keys may have been cleared)
-          // Just mark the entry as unable to decrypt without logging the full error
-          console.warn('⚠️ Could not decrypt journal entry:', entry.id, '- encryption key may be missing');
           decryptedEntries.push({
             id: entry.id,
             content: '[Encrypted - Unable to decrypt. Encryption key may have been cleared from browser storage.]',
@@ -333,11 +296,7 @@ class FirebaseService {
           });
         }
       }
-      
-      // Sort by timestamp descending (newest first)
       decryptedEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      
-      console.log('📦 Loaded and decrypted', decryptedEntries.length, 'journal entries');
       return decryptedEntries;
     } catch (error) {
       console.error('❌ Error loading journal entries from Firebase:', error);
@@ -358,7 +317,7 @@ class FirebaseService {
         updatedAt: new Date().toISOString()
       }, { merge: true });
       
-      console.log('Settings saved to Firebase');
+      // ...existing code...
       return true;
     } catch (error) {
       console.error('Error saving settings to Firebase:', error);
@@ -375,10 +334,8 @@ class FirebaseService {
       const docSnap = await getDoc(settingsRef);
       
       if (docSnap.exists()) {
-        console.log('Settings loaded from Firebase');
         return docSnap.data();
       } else {
-        console.log('No settings found in Firebase');
         return null;
       }
     } catch (error) {
@@ -392,52 +349,40 @@ class FirebaseService {
   // Migrate existing localStorage data to Firebase
   async migrateLocalStorageToFirebase() {
     try {
-      console.log('Starting migration from localStorage to Firebase...');
-      
       // Migrate chats
       const localChats = JSON.parse(localStorage.getItem('chats') || '[]');
       if (localChats.length > 0) {
-        console.log(`Migrating ${localChats.length} chats...`);
         for (const chat of localChats) {
           await this.saveChat(chat);
         }
       }
-      
       // Migrate mood history
       const localMoodHistory = JSON.parse(localStorage.getItem('mood_history') || '[]');
       if (localMoodHistory.length > 0) {
-        console.log(`Migrating ${localMoodHistory.length} mood entries...`);
         for (const mood of localMoodHistory) {
           await this.saveMoodEntry(mood);
         }
       }
-      
       // Migrate encrypted journal entries
       const localJournalEntries = JSON.parse(localStorage.getItem('journal_entries_encrypted') || '[]');
       if (localJournalEntries.length > 0) {
-        console.log(`Migrating ${localJournalEntries.length} journal entries...`);
         for (const entry of localJournalEntries) {
-          // Decrypt first
           try {
             const decrypted = await encryptionService.decryptJournalEntry(entry.encrypted);
             await this.saveJournalEntry(decrypted);
           } catch (error) {
+            // Only log error
             console.error('Failed to migrate journal entry:', error);
           }
         }
       }
-      
       // Save API key
       const apiKey = localStorage.getItem('gemini_api_key');
       if (apiKey) {
         await this.saveSettings({ apiKey });
       }
-      
-      console.log('Migration completed successfully!');
-      
       // Mark migration as complete
       localStorage.setItem('migrated_to_firebase', 'true');
-      
       return true;
     } catch (error) {
       console.error('Error during migration:', error);
