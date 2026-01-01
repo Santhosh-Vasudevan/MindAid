@@ -3,28 +3,22 @@ import React from 'react';
 function CrisisAlert({ message, onClose }) {
   const resources = [
     {
-      name: 'National Suicide Prevention Lifeline',
-      phone: '988',
-      description: '24/7 crisis support',
+      name: 'Tamil Nadu State Suicide Prevention Helpline',
+      phone: '104',
+      description: '24/7 mental health and suicide prevention helpline for Tamil Nadu',
       icon: 'phone'
     },
     {
-      name: 'Crisis Text Line',
-      phone: 'Text HOME to 741741',
-      description: 'Text-based crisis support',
-      icon: 'comment'
-    },
-    {
-      name: 'International Association for Suicide Prevention',
-      phone: 'Visit iasp.info',
-      description: 'Global crisis resources',
-      icon: 'globe'
-    },
-    {
       name: 'Emergency Services',
-      phone: '911 or local emergency',
-      description: 'Immediate emergency help',
+      phone: 'Dial 112 for immediate help',
+      description: 'Tamil Nadu emergency response',
       icon: 'exclamation-triangle'
+    },
+    {
+      name: 'Sneha Suicide Prevention Centre (Chennai)',
+      phone: '+91 44 2464 0050 / 2464 0060',
+      description: 'Confidential emotional support for people in distress',
+      icon: 'comment'
     }
   ];
 
